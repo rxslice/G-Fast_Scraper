@@ -1,0 +1,5 @@
+{
+  "name": "G-Fast AI Scraper Clone",
+  "description": "An AI-powered Google Maps lead extraction tool that simulates high-speed scraping using Gemini's grounding capabilities. Features include keyword search, data export, and lead management.",
+  "requestFramePermissions": []
+}
