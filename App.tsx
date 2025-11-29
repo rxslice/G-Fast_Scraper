@@ -65,14 +65,14 @@ const App: React.FC = () => {
   }, [leads, savedLeads, currentView]);
 
   // Handle Search
-  const handleStartScrape = async (keywords: string, location: string) => {
+  const handleStartScrape = async (keywords: string, location: string, limit: number) => {
     setStatus(ScrapeStatus.SCRAPING);
     setLeads([]); 
     
     try {
       await new Promise(resolve => setTimeout(resolve, 800)); 
       
-      const result = await searchLeads(keywords, location);
+      const result = await searchLeads(keywords, location, limit);
       
       const markedLeads = result.leads.map(l => {
          const isSaved = savedLeads.some(sl => sl.name === l.name && sl.address === l.address);

@@ -7,18 +7,31 @@ interface Props {
   onGeneratePitch: (lead: Lead) => void;
   onSaveLead: (lead: Lead) => void;
   onUpdateStatus: (leadId: string, status: Lead['status']) => void;
-  onCreateTask?: (lead: Lead) => void; // New optional prop
+  onCreateTask?: (lead: Lead) => void;
   isLibraryView?: boolean;
 }
 
 type FilterMode = 'all' | 'no-website' | 'low-rating';
+type SortKey = 'rating' | 'reviewCount';
 
 export const ResultsTable: React.FC<Props> = ({ leads, onGeneratePitch, onSaveLead, onUpdateStatus, onCreateTask, isLibraryView = false }) => {
   const [filterMode, setFilterMode] = useState<FilterMode>('all');
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  // Filter Logic
-  const filteredLeads = useMemo(() => {
-    return leads.filter(lead => {
+  // Sort Handler
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+        setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
+    } else {
+        setSortKey(key);
+        setSortOrder('desc');
+    }
+  };
+
+  // Filter & Sort Logic
+  const processedLeads = useMemo(() => {
+    let result = leads.filter(lead => {
         if (filterMode === 'no-website') {
             return lead.website === 'N/A' || lead.website === '';
         }
@@ -27,7 +40,18 @@ export const ResultsTable: React.FC<Props> = ({ leads, onGeneratePitch, onSaveLe
         }
         return true;
     });
-  }, [leads, filterMode]);
+
+    if (sortKey) {
+        result.sort((a, b) => {
+            const valA = a[sortKey];
+            const valB = b[sortKey];
+            if (sortOrder === 'asc') return valA - valB;
+            return valB - valA;
+        });
+    }
+
+    return result;
+  }, [leads, filterMode, sortKey, sortOrder]);
 
   const exportToCSV = () => {
     if (leads.length === 0) return;
@@ -88,7 +112,7 @@ export const ResultsTable: React.FC<Props> = ({ leads, onGeneratePitch, onSaveLe
         <div className="flex items-center gap-4">
             <h3 className="font-semibold text-slate-800 flex items-center gap-2">
                 <span className={`w-2 h-2 rounded-full ${isLibraryView ? 'bg-purple-500' : 'bg-emerald-500'}`}></span>
-                {isLibraryView ? "Saved Leads" : "Search Results"} ({filteredLeads.length})
+                {isLibraryView ? "Saved Leads" : "Search Results"} ({processedLeads.length})
             </h3>
             <div className="flex p-1 bg-slate-200 rounded-lg">
                 <button 
@@ -127,12 +151,22 @@ export const ResultsTable: React.FC<Props> = ({ leads, onGeneratePitch, onSaveLe
                     <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Status</th>
                     <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Contact</th>
                     <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Website</th>
-                    <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Rating</th>
+                    <th 
+                        className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors select-none"
+                        onClick={() => handleSort('rating')}
+                    >
+                        <div className="flex items-center gap-1">
+                            Rating
+                            {sortKey === 'rating' && (
+                                <span className="text-slate-400">{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                            )}
+                        </div>
+                    </th>
                     <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 text-right">Actions</th>
                 </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-                {filteredLeads.map((lead) => (
+                {processedLeads.map((lead) => (
                     <tr key={lead.id} className="hover:bg-slate-50 transition-colors group">
                         <td className="p-4">
                             <button 
@@ -213,7 +247,7 @@ export const ResultsTable: React.FC<Props> = ({ leads, onGeneratePitch, onSaveLe
                                 )}
                                 <button 
                                     onClick={() => onGeneratePitch(lead)}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow-sm shadow-indigo-200 transition-all active:scale-95"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-50 rounded-lg shadow-sm shadow-indigo-200 transition-all active:scale-95"
                                 >
                                     AI Pitch
                                 </button>
